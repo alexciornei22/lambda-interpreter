@@ -14,7 +14,13 @@ free_vars (Application ex1 ex2) = nub (free_vars ex1 ++ free_vars ex2)
 
 -- TODO 1.2. reduce a redex
 reduce :: Expr -> String -> Expr -> Expr
-reduce = undefined
+reduce ex1 x ex2 = case ex1 of
+    Variable var -> if var == x then ex2 else ex1
+    Application app1 app2 -> Application (reduce app1 x ex2) (reduce app2 x ex2)
+    Function var fun -> if var == x then
+        Function var fun
+        else if var `elem` free_vars ex2 then Function "a" (reduce (reduce fun var (Variable "a")) x ex2)
+        else Function var (reduce fun x ex2)
 
 -- Normal Evaluation
 -- TODO 1.3. perform one step of Normal Evaluation
