@@ -8,7 +8,9 @@ import Foreign (free)
 
 -- TODO 1.1. find free variables of a Expr
 free_vars :: Expr -> [String]
-free_vars = undefined
+free_vars (Variable x) = [x]
+free_vars (Function x ex) = nub (filter (/= x) (free_vars ex))
+free_vars (Application ex1 ex2) = nub (free_vars ex1 ++ free_vars ex2)
 
 -- TODO 1.2. reduce a redex
 reduce :: Expr -> String -> Expr -> Expr
