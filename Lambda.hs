@@ -50,14 +50,24 @@ reduceAllN ex = if is_redex ex then ex : reduceAllN (stepN ex) else [ex]
 -- Applicative Evaluation
 -- TODO 1.5. perform one step of Applicative Evaluation
 stepA :: Expr -> Expr
-stepA = undefined
+stepA (Application (Function var ex1) ex2)
+    | is_redex ex1 = Application (Function var $ stepA ex1) ex2
+    | is_redex ex2 = Application (Function var ex1) (stepA ex2)
+    | otherwise = reduce ex1 var ex2
+stepA (Application ex1 ex2) =
+    if is_redex ex1 then
+        Application (stepA ex1) ex2
+    else
+        Application ex1 (stepA ex2)
+stepA (Function var ex) = Function var $ stepA ex
+stepA ex = ex
 
 -- TODO 1.6. perform Applicative Evaluation
 reduceA :: Expr -> Expr
-reduceA = undefined
+reduceA ex = if is_redex ex then reduceA $ stepA ex else ex
 
 reduceAllA :: Expr -> [Expr]
-reduceAllA = undefined
+reduceAllA ex = if is_redex ex then ex : reduceAllA (stepA ex) else [ex]
 
 -- TODO 3.1. make substitutions into a expression with Macros
 evalMacros :: [(String, Expr)] -> Expr -> Expr
