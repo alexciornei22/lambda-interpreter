@@ -22,17 +22,30 @@ reduce ex1 x ex2 = case ex1 of
         else if var `elem` free_vars ex2 then Function "a" (reduce (reduce fun var (Variable "a")) x ex2)
         else Function var (reduce fun x ex2)
 
+is_redex :: Expr -> Bool
+is_redex (Application (Function var ex1) ex2) = True
+is_redex (Application ex1 ex2) = is_redex ex1 || is_redex ex2
+is_redex (Function var ex) = is_redex ex
+is_redex _ = False
+
 -- Normal Evaluation
 -- TODO 1.3. perform one step of Normal Evaluation
 stepN :: Expr -> Expr
-stepN = undefined
+stepN (Application (Function var ex1) ex2) = reduce ex1 var ex2
+stepN (Application ex1 ex2) =
+    if is_redex ex1 then
+        Application (stepN ex1) ex2
+    else
+        Application ex1 (stepN ex2)
+stepN (Function var ex) = Function var $ stepN ex
+stepN ex = ex
 
 -- TODO 1.4. perform Normal Evaluation
 reduceN :: Expr -> Expr
-reduceN = undefined
+reduceN ex = if is_redex ex then reduceN $ stepN ex else ex
 
 reduceAllN :: Expr -> [Expr]
-reduceAllN = undefined
+reduceAllN ex = if is_redex ex then ex : reduceAllN (stepN ex) else [ex]
 
 -- Applicative Evaluation
 -- TODO 1.5. perform one step of Applicative Evaluation
