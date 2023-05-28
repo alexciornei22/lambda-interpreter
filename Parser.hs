@@ -48,7 +48,7 @@ predicateParser p = Parser $
           (x:xs) -> if p x then Just (x, xs) else Nothing
 
 plusParser :: Parser a -> Parser [a]
-plusParser p = do 
+plusParser p = do
     x <- p
     xs <- starParser p
     return (x:xs)
@@ -78,8 +78,7 @@ functionExprParser = do
     predicateParser (== '\\')
     v <- variableParser
     predicateParser (== '.')
-    res <- Function v <$> simpleExprParser
-    return res
+    Function v <$> simpleExprParser
 
 simpleExprParser :: Parser Expr
 simpleExprParser = exprBracketParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
@@ -118,5 +117,21 @@ parse_expr str = case parse exprParser str of
     _ -> Variable "parse error"
 
 -- TODO 4.2. parse code
+evaluateParser :: Parser Code
+evaluateParser = Evaluate <$> exprParser
+
+assignParser :: Parser Code
+assignParser = do
+    m <- macroParser
+    whiteSpaceParser
+    predicateParser (== '=')
+    whiteSpaceParser
+    Assign m <$> exprParser
+
+codeParser :: Parser Code
+codeParser = assignParser <|> evaluateParser
+
 parse_code :: String -> Code
-parse_code = undefined
+parse_code str = case parse codeParser str of
+    Just (x, xs) -> x
+    _ -> error "parse error"

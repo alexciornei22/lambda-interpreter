@@ -84,5 +84,12 @@ evalMacros dict ex = case ex of
             ok -> ok
 
 -- TODO 4.1. evaluate code sequence using given strategy
+evalHelper :: (Expr -> Expr) -> [(String, Expr)] -> [Code] -> [Expr]
+evalHelper strategy dict codes = case codes of
+    [] -> []
+    (x:xs) -> case x of
+        Assign m ex -> evalHelper strategy ((m, ex) : dict) xs
+        Evaluate ex -> strategy (evalMacros dict ex) : evalHelper strategy dict xs
+
 evalCode :: (Expr -> Expr) -> [Code] -> [Expr]
-evalCode = undefined
+evalCode strategy = evalHelper strategy []
