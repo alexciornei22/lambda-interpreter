@@ -50,7 +50,6 @@ predicateParser p = Parser $
 plusParser :: Parser a -> Parser [a]
 plusParser p = do 
     x <- p
-    whiteSpaceParser
     xs <- starParser p
     return (x:xs)
 
@@ -66,58 +65,52 @@ variableParser = do
 whiteSpaceParser :: Parser String
 whiteSpaceParser = starParser (predicateParser (== ' '))
 
-openBracketParser :: Parser String
-openBracketParser = starParser (predicateParser (== '('))
-
-closeBracketParser :: Parser String
-closeBracketParser = starParser (predicateParser (== ')'))
-
 variableExprParser :: Parser Expr
 variableExprParser = Variable <$> variableParser
 
 functionExprParser :: Parser Expr
 functionExprParser = do
-    openBracketParser
     predicateParser (== '\\')
     v <- variableParser
     predicateParser (== '.')
     res <- Function v <$> simpleExprParser
-    closeBracketParser
     return res
 
-applicationBracketParser :: Parser Expr
-applicationBracketParser = do
-    predicateParser (== '(')
-    x <- applicationExprParser
-    predicateParser (== ')')
-    return x
-
 simpleExprParser :: Parser Expr
-simpleExprParser = applicationBracketParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
+simpleExprParser = exprBracketParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
 
 applicationParser :: Parser Expr
 applicationParser = do
     x <- simpleExprParser
-    whiteSpaceParser
-    y <- plusParser simpleExprParser
+    y <- plusParser (do
+        whiteSpaceParser
+        simpleExprParser
+        )
     return (foldl Application x y)
 
 applicationExprParser :: Parser Expr
-applicationExprParser = applicationBracketParser <|> applicationParser
+applicationExprParser = applicationParser
 
 macroExprParser :: Parser Expr
 macroExprParser = do
     predicateParser (== '$')
     Macro <$> variableParser
 
+exprBracketParser :: Parser Expr
+exprBracketParser = do
+    predicateParser (== '(')
+    res <- exprParser
+    predicateParser (== ')')
+    return res
+
 exprParser :: Parser Expr
-exprParser = applicationExprParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
+exprParser = applicationExprParser <|> exprBracketParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
 
 -- TODO 2.1. parse a expression
 parse_expr :: String -> Expr
 parse_expr str = case parse exprParser str of
     Just (x, xs) -> x
-    _ -> error "parse error"
+    _ -> Variable "parse error"
 
 -- TODO 4.2. parse code
 parse_code :: String -> Code
