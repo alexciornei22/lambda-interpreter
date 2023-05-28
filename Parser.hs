@@ -59,6 +59,11 @@ starParser p = plusParser p <|> return []
 variableParser :: Parser String
 variableParser = do
     x <- predicateParser isAsciiLower
+    return [x]
+
+macroParser :: Parser String
+macroParser = do
+    x <- predicateParser isAsciiLower
     xs <- starParser $ predicateParser isAsciiLower
     return (x:xs)
 
@@ -94,7 +99,7 @@ applicationExprParser = applicationParser
 macroExprParser :: Parser Expr
 macroExprParser = do
     predicateParser (== '$')
-    Macro <$> variableParser
+    Macro <$> macroParser
 
 exprBracketParser :: Parser Expr
 exprBracketParser = do
