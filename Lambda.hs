@@ -71,7 +71,17 @@ reduceAllA ex = if is_redex ex then ex : reduceAllA (stepA ex) else [ex]
 
 -- TODO 3.1. make substitutions into a expression with Macros
 evalMacros :: [(String, Expr)] -> Expr -> Expr
-evalMacros = undefined
+evalMacros dict ex = case ex of
+    Macro m -> case findMacro m of
+        Just x -> x
+        _ -> error "invalid macro"
+    Function var fun -> Function var (evalMacros dict fun)
+    Application app1 app2 -> Application (evalMacros dict app1) (evalMacros dict app2)
+    _ -> ex
+    where
+        findMacro name = case lookup name dict of
+            Just (Macro m) -> findMacro m
+            ok -> ok
 
 -- TODO 4.1. evaluate code sequence using given strategy
 evalCode :: (Expr -> Expr) -> [Code] -> [Expr]

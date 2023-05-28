@@ -81,7 +81,7 @@ functionExprParser = do
     predicateParser (== '\\')
     v <- variableParser
     predicateParser (== '.')
-    res <- Function v <$> exprParser
+    res <- Function v <$> simpleExprParser
     closeBracketParser
     return res
 
@@ -93,7 +93,7 @@ applicationBracketParser = do
     return x
 
 simpleExprParser :: Parser Expr
-simpleExprParser = applicationBracketParser <|> functionExprParser <|> variableExprParser
+simpleExprParser = applicationBracketParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
 
 applicationParser :: Parser Expr
 applicationParser = do
@@ -105,8 +105,13 @@ applicationParser = do
 applicationExprParser :: Parser Expr
 applicationExprParser = applicationBracketParser <|> applicationParser
 
+macroExprParser :: Parser Expr
+macroExprParser = do
+    predicateParser (== '$')
+    Macro <$> variableParser
+
 exprParser :: Parser Expr
-exprParser = applicationExprParser <|> functionExprParser <|> variableExprParser
+exprParser = applicationExprParser <|> functionExprParser <|> variableExprParser <|> macroExprParser
 
 -- TODO 2.1. parse a expression
 parse_expr :: String -> Expr
