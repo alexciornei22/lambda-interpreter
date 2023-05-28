@@ -13,14 +13,29 @@ free_vars (Function x ex) = nub (filter (/= x) (free_vars ex))
 free_vars (Application ex1 ex2) = nub (free_vars ex1 ++ free_vars ex2)
 
 -- TODO 1.2. reduce a redex
+getVars :: Expr -> [String]
+getVars (Variable x) = [x]
+getVars (Function x ex) = nub (getVars ex)
+getVars (Application ex1 ex2) = nub (getVars ex1 ++ getVars ex2)
+
+getSubstituteAux :: Int -> [String] -> String
+getSubstituteAux x vars =
+    if show x `elem` vars then
+        getSubstituteAux (x + 1) vars
+    else
+        show x
+
 reduce :: Expr -> String -> Expr -> Expr
 reduce ex1 x ex2 = case ex1 of
     Variable var -> if var == x then ex2 else ex1
     Application app1 app2 -> Application (reduce app1 x ex2) (reduce app2 x ex2)
     Function var fun -> if var == x then
         Function var fun
-        else if var `elem` free_vars ex2 then Function "a" (reduce (reduce fun var (Variable "a")) x ex2)
+        else if var `elem` free_vars ex2 then Function (getSubstitute fun) (reduce (reduce fun var (Variable "1")) x ex2)
         else Function var (reduce fun x ex2)
+    where
+        getSubstitute :: Expr -> String
+        getSubstitute ex = getSubstituteAux 1 (getVars ex)
 
 is_redex :: Expr -> Bool
 is_redex (Application (Function var ex1) ex2) = True
